@@ -46,10 +46,10 @@ const Statistics = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-4 sm:space-y-6"
     >
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Grid - Responsive layout */}
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
         {statItems.map((item, index) => (
           <motion.div
             key={item.label}
@@ -57,15 +57,19 @@ const Statistics = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="text-center">
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${item.bgColor} mb-3`}>
-                <item.icon className={`h-6 w-6 ${item.color}`} />
-              </div>
-              <div className="text-2xl font-bold text-secondary-900 dark:text-white mb-1">
-                {item.value}
-              </div>
-              <div className="text-sm text-secondary-600 dark:text-secondary-400">
-                {item.label}
+            <Card className="min-w-0 px-3 sm:px-4 py-4 sm:py-5 text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg ${item.bgColor} flex-shrink-0`}>
+                  <item.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${item.color}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-base sm:text-lg font-bold text-secondary-900 dark:text-white">
+                    {item.value}
+                  </div>
+                  <div className="text-xs text-secondary-600 dark:text-secondary-400 leading-tight">
+                    {item.label}
+                  </div>
+                </div>
               </div>
             </Card>
           </motion.div>
@@ -75,27 +79,27 @@ const Statistics = () => {
       {/* Progress Card */}
       {stats.total > 0 && (
         <Card>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-secondary-900 dark:text-white">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <h3 className="text-base sm:text-lg font-semibold text-secondary-900 dark:text-white">
                 Progress Overview
               </h3>
-              <span className="text-2xl font-bold text-primary-600">
+              <span className="text-xl sm:text-2xl font-bold text-primary-600 self-center sm:self-auto">
                 {completionRate}%
               </span>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-secondary-200 dark:bg-secondary-700 rounded-full h-3">
+            <div className="w-full bg-secondary-200 dark:bg-secondary-700 rounded-full h-3 sm:h-4">
               <motion.div
-                className="bg-gradient-to-r from-primary-500 to-primary-600 h-3 rounded-full"
+                className="bg-gradient-to-r from-primary-500 to-primary-600 h-3 sm:h-4 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${completionRate}%` }}
                 transition={{ duration: 1, ease: 'easeOut' }}
               />
             </div>
 
-            <div className="flex justify-between text-sm text-secondary-600 dark:text-secondary-400">
+            <div className="flex justify-between text-xs sm:text-sm text-secondary-600 dark:text-secondary-400">
               <span>{stats.completed} completed</span>
               <span>{stats.active} remaining</span>
             </div>
@@ -103,23 +107,23 @@ const Statistics = () => {
             {/* Motivational Message */}
             <div className="text-center pt-2">
               {completionRate === 100 ? (
-                <p className="text-green-600 dark:text-green-400 font-medium">
+                <p className="text-green-600 dark:text-green-400 font-medium text-sm sm:text-base">
                   🎉 Congratulations! All tasks completed!
                 </p>
               ) : completionRate >= 75 ? (
-                <p className="text-blue-600 dark:text-blue-400 font-medium">
+                <p className="text-blue-600 dark:text-blue-400 font-medium text-sm sm:text-base">
                   🚀 Great progress! You're almost there!
                 </p>
               ) : completionRate >= 50 ? (
-                <p className="text-yellow-600 dark:text-yellow-400 font-medium">
+                <p className="text-yellow-600 dark:text-yellow-400 font-medium text-sm sm:text-base">
                   💪 Keep going! You're halfway done!
                 </p>
               ) : completionRate > 0 ? (
-                <p className="text-orange-600 dark:text-orange-400 font-medium">
+                <p className="text-orange-600 dark:text-orange-400 font-medium text-sm sm:text-base">
                   🌟 Good start! Keep up the momentum!
                 </p>
               ) : (
-                <p className="text-secondary-600 dark:text-secondary-400">
+                <p className="text-secondary-600 dark:text-secondary-400 text-sm sm:text-base">
                   📝 Ready to tackle your tasks?
                 </p>
               )}

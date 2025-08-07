@@ -29,8 +29,10 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     formState: { errors },
     clearErrors,
     watch,
+    trigger,
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
+    mode: 'onChange', // Validate on change
   })
 
   const watchedPassword = watch('password', '')
@@ -39,10 +41,10 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
   const onSubmit = async (data: SignupFormData) => {
     try {
       setLoading(true)
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000))
-      
+
       // Mock successful signup
       const mockUser = {
         id: '1',
@@ -50,12 +52,12 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
         name: data.name,
         createdAt: new Date(),
       }
-      
+
       const mockToken = 'mock-jwt-token'
-      
+
       login(mockUser, mockToken)
       toast.success('Account created successfully! Welcome!')
-      
+
     } catch (error) {
       toast.error('Failed to create account. Please try again.')
     } finally {
@@ -101,7 +103,12 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
               placeholder="Enter your email"
               className="pl-10"
               error={errors.email?.message}
-              onChange={() => clearErrors('email')}
+              onChange={async (e) => {
+                // Trigger validation after a short delay to check email format
+                setTimeout(() => {
+                  trigger('email')
+                }, 300)
+              }}
             />
           </div>
 
@@ -121,9 +128,9 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-secondary-400 hover:text-secondary-600"
+              className="absolute right-2 top-2 p-2 text-secondary-400 hover:text-secondary-600 touch-manipulation"
             >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? <EyeOff size={18} className="sm:w-4 sm:h-4" /> : <Eye size={18} className="sm:w-4 sm:h-4" />}
             </button>
           </div>
 
@@ -133,12 +140,11 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
                 <span className="text-secondary-600 dark:text-secondary-400">
                   Password strength:
                 </span>
-                <span className={`font-medium ${
-                  passwordStrength.score >= 4 ? 'text-green-600' :
-                  passwordStrength.score >= 3 ? 'text-blue-600' :
-                  passwordStrength.score >= 2 ? 'text-yellow-600' :
-                  'text-red-600'
-                }`}>
+                <span className={`font-medium ${passwordStrength.score >= 4 ? 'text-green-600' :
+                    passwordStrength.score >= 3 ? 'text-blue-600' :
+                      passwordStrength.score >= 2 ? 'text-yellow-600' :
+                        'text-red-600'
+                  }`}>
                   {passwordStrength.label}
                 </span>
               </div>
@@ -164,9 +170,9 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-3 text-secondary-400 hover:text-secondary-600"
+              className="absolute right-2 top-2 p-2 text-secondary-400 hover:text-secondary-600 touch-manipulation"
             >
-              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showConfirmPassword ? <EyeOff size={18} className="sm:w-4 sm:h-4" /> : <Eye size={18} className="sm:w-4 sm:h-4" />}
             </button>
           </div>
 

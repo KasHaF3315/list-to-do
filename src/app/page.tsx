@@ -37,14 +37,14 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-secondary-900 dark:via-secondary-800 dark:to-secondary-900">
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-secondary-900 dark:via-secondary-800 dark:to-secondary-900">
         <div className="absolute inset-0 bg-grid-pattern opacity-5 dark:opacity-10" />
         
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="relative z-10 w-full max-w-md"
+          className="relative z-10 w-full max-w-md mx-auto"
         >
           <AnimatePresence mode="wait">
             {authView === 'login' ? (
@@ -74,10 +74,10 @@ export default function Home() {
     <div className="min-h-screen bg-secondary-50 dark:bg-secondary-900">
       <Header onCreateTodo={() => setShowTodoForm(true)} />
       
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 space-y-4 sm:space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -95,13 +95,13 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Sidebar - Shows at top on mobile */}
+          <div className="lg:col-span-1 order-first lg:order-last">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="sticky top-8"
+              className="lg:sticky lg:top-8"
             >
               <Statistics />
             </motion.div>

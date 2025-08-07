@@ -26,17 +26,19 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
     handleSubmit,
     formState: { errors },
     clearErrors,
+    trigger,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: 'onChange', // Validate on change
   })
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true)
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500))
-      
+
       // Mock successful login
       const mockUser = {
         id: '1',
@@ -44,12 +46,12 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
         name: 'John Doe',
         createdAt: new Date(),
       }
-      
+
       const mockToken = 'mock-jwt-token'
-      
+
       login(mockUser, mockToken)
       toast.success('Welcome back!')
-      
+
     } catch (error) {
       toast.error('Invalid credentials. Please try again.')
     } finally {
@@ -83,7 +85,12 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
               placeholder="Enter your email"
               className="pl-10"
               error={errors.email?.message}
-              onChange={() => clearErrors('email')}
+              onChange={async (e) => {
+                // Trigger validation after a short delay to check email format
+                setTimeout(() => {
+                  trigger('email')
+                }, 300)
+              }}
             />
           </div>
 
@@ -100,9 +107,9 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-secondary-400 hover:text-secondary-600"
+              className="absolute right-2 top-2 p-2 text-secondary-400 hover:text-secondary-600 touch-manipulation"
             >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? <EyeOff size={18} className="sm:w-4 sm:h-4" /> : <Eye size={18} className="sm:w-4 sm:h-4" />}
             </button>
           </div>
 
