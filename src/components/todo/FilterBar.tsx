@@ -18,16 +18,21 @@ const FilterBar = () => {
     setSort,
     setSearchQuery,
     setSelectedCategory,
-    getCategories,
+    categories,
     clearCompleted,
-    getStats,
+    completedCount,
+    activeCount,
+    todos,
+    isLoading
   } = useTodoStore()
 
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery)
   const [debouncedSearchQuery] = useDebounce(localSearchQuery, 300)
-
-  const categories = getCategories()
-  const stats = getStats()
+  
+  // Calculate statistics
+  const total = todos.length
+  const completed = completedCount()
+  const active = activeCount()
 
   // Update search query when debounced value changes
   React.useEffect(() => {
@@ -35,9 +40,9 @@ const FilterBar = () => {
   }, [debouncedSearchQuery, setSearchQuery])
 
   const filterOptions: { key: TodoFilter; label: string; count?: number }[] = [
-    { key: 'all', label: 'All', count: stats.total },
-    { key: 'active', label: 'Active', count: stats.active },
-    { key: 'completed', label: 'Completed', count: stats.completed },
+    { key: 'all', label: 'All', count: total },
+    { key: 'active', label: 'Active', count: active },
+    { key: 'completed', label: 'Completed', count: completed },
   ]
 
   const sortOptions: { key: TodoSort; label: string }[] = [
@@ -124,7 +129,7 @@ const FilterBar = () => {
                 className="flex-1 sm:flex-none text-sm border border-secondary-300 dark:border-secondary-600 rounded-md bg-white dark:bg-secondary-800 text-secondary-900 dark:text-secondary-100 px-3 py-2 min-h-[44px] sm:min-h-0 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="">All Categories</option>
-                {categories.map((category) => (
+                {categories().map((category: string) => (
                   <option key={category} value={category}>
                     {category}
                   </option>
@@ -134,15 +139,15 @@ const FilterBar = () => {
           )}
 
           {/* Clear Completed */}
-          {stats.completed > 0 && (
+          {completed > 0 && (
             <Button
               variant="outline"
               size="sm"
               onClick={clearCompleted}
               className="w-full sm:w-auto sm:ml-auto min-h-[44px] sm:min-h-0"
             >
-              <span className="sm:hidden">Clear {stats.completed} Completed</span>
-              <span className="hidden sm:inline">Clear Completed ({stats.completed})</span>
+              <span className="sm:hidden">Clear {completed} Completed</span>
+              <span className="hidden sm:inline">Clear Completed ({completed})</span>
             </Button>
           )}
         </div>

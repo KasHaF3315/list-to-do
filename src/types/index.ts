@@ -7,6 +7,7 @@ export interface Todo {
   category: string
   tags: string[]
   dueDate?: Date
+  userId: string
   createdAt: Date
   updatedAt: Date
 }

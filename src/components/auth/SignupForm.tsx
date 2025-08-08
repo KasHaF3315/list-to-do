@@ -42,24 +42,36 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     try {
       setLoading(true)
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        }),
+      })
 
-      // Mock successful signup
-      const mockUser = {
-        id: '1',
-        email: data.email,
-        name: data.name,
-        createdAt: new Date(),
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Registration failed')
       }
 
-      const mockToken = 'mock-jwt-token'
+      const { user, token } = result
+      login({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: new Date(user.createdAt),
+      }, token)
 
-      login(mockUser, mockToken)
       toast.success('Account created successfully! Welcome!')
 
     } catch (error) {
-      toast.error('Failed to create account. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Failed to create account. Please try again.')
     } finally {
       setLoading(false)
     }

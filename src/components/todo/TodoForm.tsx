@@ -20,9 +20,10 @@ interface TodoFormProps {
 }
 
 const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
-  const { addTodo, updateTodo } = useTodoStore()
+  const { addTodo, updateTodo, isLoading } = useTodoStore()
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
+
 
   const {
     register,
@@ -52,22 +53,26 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
     }
   }, [editTodo, setValue, reset])
 
-  const onSubmit = (data: TodoFormData) => {
+  const onSubmit = async (data: TodoFormData) => {
     const todoData = {
       ...data,
-      tags,
+      tags, // Add tags from state
       completed: editTodo?.completed || false,
+      userId: editTodo?.userId || undefined // Will use default from API if undefined
     }
 
-    if (editTodo) {
-      updateTodo(editTodo.id, todoData)
-      toast.success('Todo updated successfully!')
-    } else {
-      addTodo(todoData)
-      toast.success('Todo created successfully!')
+    try {
+      if (editTodo) {
+        await updateTodo(editTodo.id, todoData)
+        toast.success('Todo updated successfully!')
+      } else {
+        await addTodo(todoData)
+        toast.success('Todo created successfully!')
+      }
+      handleClose()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'An error occurred')
     }
-
-    handleClose()
   }
 
   const handleClose = () => {
@@ -94,6 +99,8 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
       addTag()
     }
   }
+
+
 
   if (!isOpen) return null
 
@@ -246,6 +253,8 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
               <Button
                 type="submit"
                 className="flex-1 h-12 sm:h-10"
+                isLoading={isLoading}
+                disabled={isLoading}
               >
                 {editTodo ? 'Update Todo' : 'Create Todo'}
               </Button>

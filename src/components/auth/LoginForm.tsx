@@ -36,24 +36,35 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
     try {
       setLoading(true)
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      })
 
-      // Mock successful login
-      const mockUser = {
-        id: '1',
-        email: data.email,
-        name: 'John Doe',
-        createdAt: new Date(),
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Login failed')
       }
 
-      const mockToken = 'mock-jwt-token'
+      const { user, token } = result
+      login({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: new Date(user.createdAt),
+      }, token)
 
-      login(mockUser, mockToken)
       toast.success('Welcome back!')
 
     } catch (error) {
-      toast.error('Invalid credentials. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Invalid credentials. Please try again.')
     } finally {
       setLoading(false)
     }

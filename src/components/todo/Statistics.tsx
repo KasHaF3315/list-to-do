@@ -6,8 +6,15 @@ import { useTodoStore } from '@/store/todoStore'
 import Card from '../ui/Card'
 
 const Statistics = () => {
-  const { getStats } = useTodoStore()
-  const stats = getStats()
+  const { completedCount, activeCount, todos, isLoading } = useTodoStore()
+  
+  // Calculate statistics
+  const total = todos.length
+  const completed = completedCount()
+  const active = activeCount()
+  const overdue = todos.filter(todo => todo.dueDate && !todo.completed && new Date(todo.dueDate) < new Date()).length
+  
+  const stats = { total, completed, active, overdue }
 
   const statItems = [
     {
@@ -41,6 +48,23 @@ const Statistics = () => {
   ]
 
   const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
+
+  if (isLoading) {
+    return (
+      <Card className="p-4 sm:p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-secondary-200 dark:bg-secondary-700 rounded w-1/3"></div>
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-16 bg-secondary-200 dark:bg-secondary-700 rounded"></div>
+            ))}
+          </div>
+          <div className="h-4 bg-secondary-200 dark:bg-secondary-700 rounded w-1/2"></div>
+          <div className="h-8 bg-secondary-200 dark:bg-secondary-700 rounded"></div>
+        </div>
+      </Card>
+    )
+  }
 
   return (
     <motion.div

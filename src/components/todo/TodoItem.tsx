@@ -16,13 +16,17 @@ interface TodoItemProps {
 }
 
 const TodoItem = ({ todo, onEdit }: TodoItemProps) => {
-  const { toggleTodo, deleteTodo } = useTodoStore()
+  const { toggleTodo, deleteTodo, isLoading } = useTodoStore()
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
-    setIsDeleting(true)
-    await new Promise(resolve => setTimeout(resolve, 300))
-    deleteTodo(todo.id)
+    try {
+      setIsDeleting(true)
+      await deleteTodo(todo.id)
+    } catch (error) {
+      console.error('Error deleting todo:', error)
+      setIsDeleting(false)
+    }
   }
 
   const priorityColors = {
