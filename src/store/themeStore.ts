@@ -13,14 +13,14 @@ export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
       theme: 'system',
-      
+
       setTheme: (theme: Theme) => {
         set({ theme })
-        
+
         if (typeof window !== 'undefined') {
           const root = window.document.documentElement
           root.classList.remove('light', 'dark')
-          
+
           if (theme === 'system') {
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
             root.classList.add(systemTheme)
@@ -29,7 +29,7 @@ export const useThemeStore = create<ThemeStore>()(
           }
         }
       },
-      
+
       toggleTheme: () => {
         const { theme } = get()
         const newTheme = theme === 'light' ? 'dark' : 'light'

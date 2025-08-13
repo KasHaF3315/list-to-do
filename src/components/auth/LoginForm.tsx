@@ -7,10 +7,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import toast from 'react-hot-toast'
 import { loginSchema, LoginFormData } from '@/lib/validations'
+import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import Card from '../ui/Card'
+import { useRouter } from 'next/navigation'
 
 interface LoginFormProps {
   onSwitchToSignup: () => void
@@ -20,6 +22,7 @@ interface LoginFormProps {
 const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false)
   const { login, setLoading, isLoading } = useAuthStore()
+  const router = useRouter()
 
   const {
     register,
@@ -36,23 +39,7 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
     try {
       setLoading(true)
 
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Login failed')
-      }
-
+      const result = await api.auth.login({ email: data.email, password: data.password })
       const { user, token } = result
       login({
         id: user.id,
@@ -62,6 +49,7 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
       }, token)
 
       toast.success('Welcome back!')
+      router.push('/dashboard')
 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Invalid credentials. Please try again.')
@@ -174,15 +162,15 @@ const LoginForm = ({ onSwitchToSignup, onGuestAccess }: LoginFormProps) => {
           </Button>
         </div>
 
-        <p className="text-center text-sm text-secondary-600 dark:text-secondary-400">
-          Don't have an account?{' '}
-          <button
-            onClick={onSwitchToSignup}
-            className="text-primary-600 hover:text-primary-500 font-medium"
-          >
-            Sign up
-          </button>
-        </p>
+                  <p className="text-center text-sm text-secondary-600 dark:text-secondary-400">
+            Don&apos;t have an account?{' '}
+            <button
+              onClick={onSwitchToSignup}
+              className="text-primary-600 hover:text-primary-500 font-medium"
+            >
+              Sign up
+            </button>
+          </p>
       </Card>
     </motion.div>
   )

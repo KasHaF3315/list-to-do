@@ -7,11 +7,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import toast from 'react-hot-toast'
 import { signupSchema, SignupFormData } from '@/lib/validations'
+import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { getPasswordStrength } from '@/lib/utils'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import Card from '../ui/Card'
+import { useRouter } from 'next/navigation'
 
 interface SignupFormProps {
   onSwitchToLogin: () => void
@@ -22,6 +24,7 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [password, setPassword] = useState('')
   const { login, setLoading, isLoading } = useAuthStore()
+  const router = useRouter()
 
   const {
     register,
@@ -42,23 +45,11 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     try {
       setLoading(true)
 
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        }),
+      const result = await api.auth.register({
+        name: data.name,
+        email: data.email,
+        password: data.password,
       })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Registration failed')
-      }
 
       const { user, token } = result
       login({
@@ -69,6 +60,9 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
       }, token)
 
       toast.success('Account created successfully! Welcome!')
+
+      // Explicitly navigate to dashboard to avoid any client/router edge-cases
+      router.push('/dashboard')
 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create account. Please try again.')
@@ -153,9 +147,9 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
                   Password strength:
                 </span>
                 <span className={`font-medium ${passwordStrength.score >= 4 ? 'text-green-600' :
-                    passwordStrength.score >= 3 ? 'text-blue-600' :
-                      passwordStrength.score >= 2 ? 'text-yellow-600' :
-                        'text-red-600'
+                  passwordStrength.score >= 3 ? 'text-blue-600' :
+                    passwordStrength.score >= 2 ? 'text-yellow-600' :
+                      'text-red-600'
                   }`}>
                   {passwordStrength.label}
                 </span>

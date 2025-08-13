@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTodoStore } from '@/store/todoStore'
 import { Todo } from '@/types'
 import TodoItem from './TodoItem'
-import TodoForm from './TodoForm'
+import TodoForm from './Page'
 import Loading from '../ui/Loading'
 
 const TodoList = () => {

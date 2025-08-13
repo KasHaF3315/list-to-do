@@ -136,11 +136,11 @@ const Statistics = () => {
                 </p>
               ) : completionRate >= 75 ? (
                 <p className="text-blue-600 dark:text-blue-400 font-medium text-sm sm:text-base">
-                  🚀 Great progress! You're almost there!
+                  🚀 Great progress! You&apos;re almost there!
                 </p>
               ) : completionRate >= 50 ? (
                 <p className="text-yellow-600 dark:text-yellow-400 font-medium text-sm sm:text-base">
-                  💪 Keep going! You're halfway done!
+                  💪 Keep going! You&apos;re halfway done!
                 </p>
               ) : completionRate > 0 ? (
                 <p className="text-orange-600 dark:text-orange-400 font-medium text-sm sm:text-base">

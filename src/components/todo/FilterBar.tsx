@@ -173,7 +173,7 @@ const FilterBar = () => {
             )}
             {searchQuery && (
               <span className="inline-flex items-center px-3 py-2 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400">
-                Search: "{searchQuery}"
+                Search: &quot;{searchQuery}&quot;
                 <button
                   onClick={() => {
                     setSearchQuery('')

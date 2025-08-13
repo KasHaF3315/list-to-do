@@ -20,10 +20,9 @@ interface TodoFormProps {
 }
 
 const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
-  const { addTodo, updateTodo, isLoading } = useTodoStore()
+  const { addTodo, updateTodo } = useTodoStore()
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
-
 
   const {
     register,
@@ -53,26 +52,25 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
     }
   }, [editTodo, setValue, reset])
 
-  const onSubmit = async (data: TodoFormData) => {
+  const onSubmit = (data: TodoFormData) => {
+    const userId = 'current-user-id'
+
     const todoData = {
       ...data,
-      tags, // Add tags from state
+      tags,
       completed: editTodo?.completed || false,
-      userId: editTodo?.userId || undefined // Will use default from API if undefined
+      userId,
     }
 
-    try {
-      if (editTodo) {
-        await updateTodo(editTodo.id, todoData)
-        toast.success('Todo updated successfully!')
-      } else {
-        await addTodo(todoData)
-        toast.success('Todo created successfully!')
-      }
-      handleClose()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'An error occurred')
+    if (editTodo) {
+      updateTodo(editTodo.id, todoData)
+      toast.success('Todo updated successfully!')
+    } else {
+      addTodo(todoData)
+      toast.success('Todo created successfully!')
     }
+
+    handleClose()
   }
 
   const handleClose = () => {
@@ -100,8 +98,6 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
     }
   }
 
-
-
   if (!isOpen) return null
 
   return (
@@ -109,7 +105,7 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 sm:p-6 z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       onClick={handleClose}
     >
       <motion.div
@@ -117,24 +113,24 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md"
       >
-        <Card className="space-y-4 sm:space-y-6">
+        <Card className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl font-semibold text-secondary-900 dark:text-white">
+            <h2 className="text-xl font-semibold text-secondary-900 dark:text-white">
               {editTodo ? 'Edit Todo' : 'Create New Todo'}
             </h2>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClose}
-              className="p-2 h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0"
+              className="p-1 h-8 w-8"
             >
               <X size={16} />
             </Button>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               {...register('title')}
               label="Title"
@@ -150,7 +146,7 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
                 {...register('description')}
                 placeholder="Add a description (optional)"
                 rows={3}
-                className="flex min-h-[80px] w-full rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 px-3 py-3 sm:py-2 text-base sm:text-sm text-secondary-900 dark:text-secondary-100 placeholder:text-secondary-500 dark:placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                className="flex w-full rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 px-3 py-2 text-sm text-secondary-900 dark:text-secondary-100 placeholder:text-secondary-500 dark:placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none"
               />
               {errors.description && (
                 <p className="mt-1 text-sm text-error-600 dark:text-error-400">
@@ -159,14 +155,14 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
                   Priority
                 </label>
                 <select
                   {...register('priority')}
-                  className="flex h-12 sm:h-10 w-full rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 px-3 py-2 text-base sm:text-sm text-secondary-900 dark:text-secondary-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex h-10 w-full rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 px-3 py-2 text-sm text-secondary-900 dark:text-secondary-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -184,7 +180,7 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
 
             <div>
               <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                Due Date and time
+                Due Date and Time
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 h-4 w-4 text-secondary-400" />
@@ -193,7 +189,7 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
                     valueAsDate: true,
                   })}
                   type="datetime-local"
-                  className="flex h-12 sm:h-10 w-full rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 pl-10 pr-3 py-2 text-base sm:text-sm text-secondary-900 dark:text-secondary-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex h-10 w-full rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 pl-10 pr-3 py-2 text-sm text-secondary-900 dark:text-secondary-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -220,41 +216,39 @@ const TodoForm = ({ isOpen, onClose, editTodo }: TodoFormProps) => {
                   </span>
                 ))}
               </div>
-              <div className="flex gap-2 w-full">
+              <div className="flex space-x-2">
                 <input
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={handleTagKeyPress}
                   placeholder="Add a tag"
-                  className="flex-1 min-w-0 h-12 sm:h-10 rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 px-3 py-2 text-base sm:text-sm text-secondary-900 dark:text-secondary-100 placeholder:text-secondary-500 dark:placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 h-10 rounded-md border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 px-3 py-2 text-sm text-secondary-900 dark:text-secondary-100 placeholder:text-secondary-500 dark:placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={addTag}
-                  className="px-3 h-12 sm:h-10 flex-shrink-0 w-12 sm:w-auto"
+                  className="px-3"
                 >
                   <Plus size={14} />
                 </Button>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+            <div className="flex space-x-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="flex-1 h-12 sm:h-10"
+                className="flex-1"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 h-12 sm:h-10"
-                isLoading={isLoading}
-                disabled={isLoading}
+                className="flex-1"
               >
                 {editTodo ? 'Update Todo' : 'Create Todo'}
               </Button>

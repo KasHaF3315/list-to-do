@@ -55,26 +55,46 @@ A comprehensive, modern todo application built with Next.js 14, TypeScript, and 
 - **Prettier** - Code formatting
 - **PostCSS** - CSS processing
 
-## 🚦 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+### For New Computers/VS Code Setup
 
-### Installation
-
-1. **Install dependencies**
+1. **Run the complete setup script**
    ```bash
+   complete-setup.bat
+   ```
+
+2. **Or follow manual steps:**
+   ```bash
+   # Install frontend dependencies
    npm install
+   
+   # Install backend dependencies
+   cd backend
+   npm install
+   
+   # Create environment file
+   copy .env.example .env
+   cd ..
    ```
 
-2. **Run the development server**
+3. **Start both servers**
    ```bash
-   npm run dev
+   # Terminal 1 - Backend
+   start-backend.bat
+   
+   # Terminal 2 - Frontend  
+   start-frontend.bat
    ```
 
-3. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+4. **Access the application**
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - Backend API: [http://localhost:5000](http://localhost:5000)
+
+### Important Notes
+- **Environment File**: The `.env` file must be created manually on each new computer
+- **Dependencies**: Both frontend and backend have separate `package.json` files
+- **See SETUP_GUIDE.md** for detailed troubleshooting and cross-computer setup instructions
 
 ### Build for Production
 ```bash

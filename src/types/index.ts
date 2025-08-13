@@ -12,6 +12,15 @@ export interface Todo {
   updatedAt: Date
 }
 
+export interface TodoFormData {
+  title: string;
+  description?: string;
+  priority?: 'low' | 'medium' | 'high';
+  category?: string;
+  tags?: string[];
+  dueDate?: Date;
+}
+
 export interface User {
   id: string
   email: string

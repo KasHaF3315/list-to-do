@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist, devtools } from 'zustand/middleware'
+import { devtools, persist, createJSONStorage } from 'zustand/middleware'
 import { Todo, TodoFilter, TodoSort } from '@/types'
 import { generateId } from '@/lib/utils'
 import { api } from '@/lib/api'
@@ -13,6 +13,7 @@ export interface TodoStore {
   selectedCategory: string
   isLoading: boolean
   error: string | null
+  lastSync: Date | null
 
   fetchTodos: () => Promise<void>
   addTodo: (todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
@@ -24,14 +25,35 @@ export interface TodoStore {
   setSearchQuery: (query: string) => void
   setSelectedCategory: (category: string) => void
   clearCompleted: () => Promise<void>
+  clearAllTodos: () => void
+  syncWithBackend: () => Promise<void>
 
-  // Computed properties
+  // Computed & helper methods
   filteredTodos: () => Todo[]
   sortedAndFilteredTodos: () => Todo[]
   completedCount: () => number
   activeCount: () => number
   categories: () => string[]
+  getFilteredTodos: () => Todo[]
+  getStats: () => { total: number; completed: number; active: number; overdue: number }
+  getCategories: () => string[]
 }
+
+// Get current user ID for storage isolation
+const getCurrentUserId = (): string => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.userId || 'anonymous';
+      } catch {
+        return 'anonymous';
+      }
+    }
+  }
+  return 'anonymous';
+};
 
 export const useTodoStore = create<TodoStore>()(
   devtools(
@@ -44,50 +66,62 @@ export const useTodoStore = create<TodoStore>()(
         selectedCategory: '',
         isLoading: false,
         error: null,
+        lastSync: null,
 
         fetchTodos: async () => {
           set({ isLoading: true, error: null })
           try {
             const todos = await api.todos.getAll()
-            set({ todos, isLoading: false })
+            set({
+              todos,
+              isLoading: false,
+              lastSync: new Date(),
+              error: null
+            })
+            console.log('Todos fetched successfully:', todos.length)
           } catch (error) {
             console.error('Error fetching todos:', error)
-            set({ 
-              error: error instanceof Error ? error.message : 'Failed to fetch todos', 
-              isLoading: false 
+            set({
+              error: error instanceof Error ? error.message : 'Failed to fetch todos',
+              isLoading: false
             })
+            // Fallback to local storage if backend is unavailable
+            console.log('Falling back to local storage')
           }
         },
 
         addTodo: async (todoData) => {
           set({ isLoading: true, error: null })
           try {
-            // Add default userId if not provided
             if (!todoData.userId) {
               todoData.userId = DEFAULT_VALUES.defaultUserId
             }
-            
             const newTodo = await api.todos.create(todoData)
             set((state) => ({
               todos: [newTodo, ...state.todos],
-              isLoading: false
+              isLoading: false,
+              error: null
             }))
+            console.log('Todo added successfully:', newTodo.title)
           } catch (error) {
             console.error('Error adding todo:', error)
-            set({ 
-              error: error instanceof Error ? error.message : 'Failed to add todo', 
-              isLoading: false 
+            set({
+              error: error instanceof Error ? error.message : 'Failed to add todo',
+              isLoading: false
             })
-            // Fallback to local creation if API fails
+            // Fallback: add to local state
             const newTodo: Todo = {
               ...todoData,
               id: generateId(),
               createdAt: new Date(),
               updatedAt: new Date(),
+              completed: false
             }
             set((state) => ({
               todos: [newTodo, ...state.todos],
+              isLoading: false
             }))
+            console.log('Todo added to local storage as fallback')
           }
         },
 
@@ -96,25 +130,29 @@ export const useTodoStore = create<TodoStore>()(
           try {
             const updatedTodo = await api.todos.update(id, updates)
             set((state) => ({
-              todos: state.todos.map((todo) =>
+              todos: state.todos.map(todo =>
                 todo.id === id ? updatedTodo : todo
               ),
-              isLoading: false
+              isLoading: false,
+              error: null
             }))
+            console.log('Todo updated successfully:', updatedTodo.title)
           } catch (error) {
             console.error('Error updating todo:', error)
-            set({ 
-              error: error instanceof Error ? error.message : 'Failed to update todo', 
-              isLoading: false 
+            set({
+              error: error instanceof Error ? error.message : 'Failed to update todo',
+              isLoading: false
             })
-            // Fallback to local update if API fails
+            // Fallback: update local state
             set((state) => ({
-              todos: state.todos.map((todo) =>
+              todos: state.todos.map(todo =>
                 todo.id === id
                   ? { ...todo, ...updates, updatedAt: new Date() }
                   : todo
               ),
+              isLoading: false
             }))
+            console.log('Todo updated in local storage as fallback')
           }
         },
 
@@ -123,226 +161,170 @@ export const useTodoStore = create<TodoStore>()(
           try {
             await api.todos.delete(id)
             set((state) => ({
-              todos: state.todos.filter((todo) => todo.id !== id),
-              isLoading: false
+              todos: state.todos.filter(todo => todo.id !== id),
+              isLoading: false,
+              error: null
             }))
+            console.log('Todo deleted successfully')
           } catch (error) {
             console.error('Error deleting todo:', error)
-            set({ 
-              error: error instanceof Error ? error.message : 'Failed to delete todo', 
-              isLoading: false 
+            set({
+              error: error instanceof Error ? error.message : 'Failed to delete todo',
+              isLoading: false
             })
-            // Fallback to local deletion if API fails
+            // Fallback: remove from local state
             set((state) => ({
-              todos: state.todos.filter((todo) => todo.id !== id),
+              todos: state.todos.filter(todo => todo.id !== id),
+              isLoading: false
             }))
+            console.log('Todo removed from local storage as fallback')
           }
         },
 
         toggleTodo: async (id) => {
-          const todo = get().todos.find((t) => t.id === id)
+          const todo = get().todos.find(t => t.id === id)
           if (!todo) return
-          
+
+          const updates = { completed: !todo.completed }
+          await get().updateTodo(id, updates)
+        },
+
+        clearCompleted: async () => {
+          const completedTodos = get().todos.filter(todo => todo.completed)
           set({ isLoading: true, error: null })
+
           try {
-            const updatedTodo = await api.todos.update(id, { completed: !todo.completed })
+            // Delete all completed todos from backend
+            await Promise.all(
+              completedTodos.map(todo => api.todos.delete(todo.id))
+            )
+
             set((state) => ({
-              todos: state.todos.map((t) =>
-                t.id === id ? updatedTodo : t
-              ),
+              todos: state.todos.filter(todo => !todo.completed),
+              isLoading: false,
+              error: null
+            }))
+            console.log('Completed todos cleared successfully')
+          } catch (error) {
+            console.error('Error clearing completed todos:', error)
+            set({
+              error: error instanceof Error ? error.message : 'Failed to clear completed todos',
+              isLoading: false
+            })
+            // Fallback: clear from local state
+            set((state) => ({
+              todos: state.todos.filter(todo => !todo.completed),
               isLoading: false
             }))
-          } catch (error) {
-            console.error('Error toggling todo:', error)
-            set({ 
-              error: error instanceof Error ? error.message : 'Failed to toggle todo', 
-              isLoading: false 
-            })
-            // Fallback to local toggle if API fails
-            set((state) => ({
-              todos: state.todos.map((t) =>
-                t.id === id
-                  ? { ...t, completed: !t.completed, updatedAt: new Date() }
-                  : t
-              ),
-            }))
+            console.log('Completed todos cleared from local storage as fallback')
           }
+        },
+
+        syncWithBackend: async () => {
+          console.log('Syncing with backend...')
+          await get().fetchTodos()
         },
 
         setFilter: (filter) => set({ filter }),
         setSort: (sort) => set({ sort }),
         setSearchQuery: (query) => set({ searchQuery: query }),
         setSelectedCategory: (category) => set({ selectedCategory: category }),
+        clearAllTodos: () => set({ todos: [], error: null }),
 
-        clearCompleted: async () => {
-          const completedTodos = get().todos.filter((todo) => todo.completed)
-          set({ isLoading: true, error: null })
-          
-          try {
-            // Delete each completed todo from the API
-            await Promise.all(
-              completedTodos.map((todo) => api.todos.delete(todo.id))
-            )
-            
-            set((state) => ({
-              todos: state.todos.filter((todo) => !todo.completed),
-              isLoading: false
-            }))
-          } catch (error) {
-            console.error('Error clearing completed todos:', error)
-            set({ 
-              error: error instanceof Error ? error.message : 'Failed to clear completed todos', 
-              isLoading: false 
-            })
-            // Fallback to local clearing if API fails
-            set((state) => ({
-              todos: state.todos.filter((todo) => !todo.completed),
-            }))
-          }
-        },
-
-        getFilteredTodos: () => {
-          const { todos, filter, searchQuery, selectedCategory, sort } = get()
-          
-          let filtered = todos
-
-          // Filter by completion status
-          if (filter === 'active') {
-            filtered = filtered.filter((todo) => !todo.completed)
-          } else if (filter === 'completed') {
-            filtered = filtered.filter((todo) => todo.completed)
-          }
-
-          // Filter by search query
-          if (searchQuery) {
-            filtered = filtered.filter((todo) =>
-              todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              todo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              todo.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-            )
-          }
-
-          // Filter by category
-          if (selectedCategory) {
-            filtered = filtered.filter((todo) => todo.category === selectedCategory)
-          }
-
-          // Sort todos
-          filtered.sort((a, b) => {
-            switch (sort) {
-              case 'priority':
-                const priorityOrder = { high: 3, medium: 2, low: 1 }
-                return priorityOrder[b.priority] - priorityOrder[a.priority]
-              case 'dueDate':
-                if (!a.dueDate && !b.dueDate) return 0
-                if (!a.dueDate) return 1
-                if (!b.dueDate) return -1
-                return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-              case 'updated':
-                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-              case 'created':
-              default:
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            }
-          })
-
-          return filtered
-        },
-
-        getStats: () => {
-          const { todos } = get()
-          const total = todos.length
-          const completed = todos.filter((todo) => todo.completed).length
-          const active = total - completed
-          const overdue = todos.filter((todo) => 
-            todo.dueDate && new Date(todo.dueDate) < new Date() && !todo.completed
-          ).length
-
-          return { total, completed, active, overdue }
-        },
-
-        getCategories: () => {
-          const { todos } = get()
-          const categories = Array.from(new Set(todos.map((todo) => todo.category)))
-          return categories.filter(Boolean)
-        },
-
-        // Computed properties
+        // Computed methods
         filteredTodos: () => {
-          const { todos, filter, searchQuery, selectedCategory, sort } = get()
-          
+          const { todos, filter, searchQuery, selectedCategory } = get()
           let filtered = todos
 
-          // Filter by completion status
-          if (filter === 'active') {
-            filtered = filtered.filter((todo) => !todo.completed)
-          } else if (filter === 'completed') {
-            filtered = filtered.filter((todo) => todo.completed)
-          }
-
-          // Filter by search query
+          // Apply search filter
           if (searchQuery) {
-            filtered = filtered.filter((todo) =>
-              todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              todo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              todo.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+            const query = searchQuery.toLowerCase()
+            filtered = filtered.filter(todo =>
+              todo.title.toLowerCase().includes(query) ||
+              (todo.description && todo.description.toLowerCase().includes(query)) ||
+              todo.tags.some(tag => tag.toLowerCase().includes(query))
             )
           }
 
-          // Filter by category
+          // Apply category filter
           if (selectedCategory) {
-            filtered = filtered.filter((todo) => todo.category === selectedCategory)
+            filtered = filtered.filter(todo => todo.category === selectedCategory)
           }
 
-          // Sort todos
-          if (sort === 'created') {
-            filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          } else if (sort === 'updated') {
-            filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-          } else if (sort === 'priority') {
-            const priorityOrder = { high: 3, medium: 2, low: 1 }
-            filtered.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority])
-          } else if (sort === 'dueDate') {
-            filtered.sort((a, b) => {
-              if (!a.dueDate && !b.dueDate) return 0
-              if (!a.dueDate) return 1
-              if (!b.dueDate) return -1
-              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-            })
+          // Apply completion filter
+          switch (filter) {
+            case 'active':
+              filtered = filtered.filter(todo => !todo.completed)
+              break
+            case 'completed':
+              filtered = filtered.filter(todo => todo.completed)
+              break
+            default:
+              break
           }
 
           return filtered
         },
 
         sortedAndFilteredTodos: () => {
-          return get().filteredTodos()
+          const filtered = get().filteredTodos()
+          const { sort } = get()
+
+          return [...filtered].sort((a, b) => {
+            switch (sort) {
+              case 'created':
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              case 'updated':
+                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+              case 'dueDate':
+                if (!a.dueDate && !b.dueDate) return 0
+                if (!a.dueDate) return 1
+                if (!b.dueDate) return -1
+                return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+              case 'priority':
+                const priorityOrder = { high: 3, medium: 2, low: 1 }
+                return priorityOrder[b.priority] - priorityOrder[a.priority]
+              default:
+                return 0
+            }
+          })
         },
 
-        completedCount: () => {
-          const { todos } = get()
-          return todos.filter((todo) => todo.completed).length
-        },
+        completedCount: () => get().todos.filter(todo => todo.completed).length,
+        activeCount: () => get().todos.filter(todo => !todo.completed).length,
+        categories: () => Array.from(new Set(get().todos.map(todo => todo.category))),
+        getFilteredTodos: () => get().sortedAndFilteredTodos(),
+        getCategories: () => get().categories(),
 
-        activeCount: () => {
-          const { todos } = get()
-          return todos.filter((todo) => !todo.completed).length
-        },
-
-        categories: () => {
-          const { todos } = get()
-          const categories = Array.from(new Set(todos.map((todo) => todo.category)))
-          return categories.filter(Boolean)
+        getStats: () => {
+          const todos = get().todos
+          const now = new Date()
+          return {
+            total: todos.length,
+            completed: todos.filter(todo => todo.completed).length,
+            active: todos.filter(todo => !todo.completed).length,
+            overdue: todos.filter(todo =>
+              !todo.completed &&
+              todo.dueDate &&
+              new Date(todo.dueDate) < now
+            ).length
+          }
         },
       }),
       {
-        name: 'todo-storage',
+        name: `todo-storage-${getCurrentUserId()}`,
+        storage: typeof window !== 'undefined'
+          ? createJSONStorage(() => localStorage)
+          : undefined,
         partialize: (state) => ({
           todos: state.todos,
           filter: state.filter,
           sort: state.sort,
-        }),
+          searchQuery: state.searchQuery,
+          selectedCategory: state.selectedCategory,
+          lastSync: state.lastSync
+        })
       }
-    ),
-    { name: 'todo-store' }
+    )
   )
 )

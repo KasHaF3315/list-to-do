@@ -20,6 +20,8 @@ const Header = ({ onCreateTodo }: HeaderProps) => {
   const handleLogout = () => {
     logout()
     toast.success('Logged out successfully!')
+    localStorage.removeItem('token')
+
   }
 
   return (
@@ -90,7 +92,7 @@ const Header = ({ onCreateTodo }: HeaderProps) => {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile stats bar */}
       {stats.total > 0 && (
         <div className="sm:hidden mt-2 pt-2 border-t border-secondary-200 dark:border-secondary-700">
